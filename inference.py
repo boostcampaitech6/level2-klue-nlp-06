@@ -15,6 +15,10 @@ from tqdm import tqdm
 
 from train import set_seed
 
+# deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
+from models.base_model import Model
+
+
 def inference(model, tokenized_sent, device, batch_size=16):
   """
     test dataset을 DataLoader로 만들어 준 후,
@@ -62,11 +66,28 @@ def main(config: Dict):
         주어진 dataset csv 파일과 같은 형태일 경우 inference 가능한 코드입니다.
     """
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+    
     ## load my model
-    MODEL_PATH = './best_model/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.pt'# model dir.
-    model = torch.load(MODEL_PATH)
-    model.parameters
+    # deepspeed ckpt load 추가
+    '''
+    deepspeed ckpt로 inference 진행 시, 반드시 zero_to_fp32.py 실행을 통해 fp16으로 저장되어 있는 weights를 fp32로 변환해주는 과정이 필요함
+    -> 실행 후 ckpt 폴더 이름과 동일한 이름으로 bin 파일 생성하기
+    python3 zero_to_fp32.py '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
+    '''
+
+    if config['deepspeed'] == True:
+      CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
+      checkpoint = torch.load(CHKPOINT_PATH)
+
+      model = Model(config['arch']['model_name'], config['trainer']['learning_rate'])
+      model.load_state_dict(checkpoint)
+      model.parameters
+
+    else:
+      MODEL_PATH = './best_model/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.pt'# model dir.
+      model = torch.load(MODEL_PATH)
+      model.parameters
+    
     model.to(device)
 
     ## load test datset
@@ -92,7 +113,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-base.json'
+    selected_config = 'roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
