@@ -75,24 +75,32 @@ def main(config: Dict):
     
     # dataset 생성
     dataloader.setup(stage='inference')
-    pred_dataset = dataloader.predict_dataset
+    
+    if config['trainer']['val_mode']:
+       pred_dataset = dataloader.test_dataset
+    else:
+       pred_dataset = dataloader.predict_dataset
+
     ## predict answer
     pred_answer, output_prob = inference(model,pred_dataset, device, config['trainer']['infer_batch_size']) # model에서 class 추론
-    pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
     
     ## make csv file with predicted answer
     #########################################################
     # 아래 directory와 columns의 형태는 지켜주시기 바랍니다.
-    output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,})
-
-    output.to_csv('./prediction/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+    if config['trainer']['val_mode']:
+        output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,'label':dataloader.test_dataset[:]['labels'].tolist()})
+        output.to_csv('./prediction/'+'val_'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False)
+    else:
+       pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
+       output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,})
+       output.to_csv('./prediction/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
     print('---- Finish! ----')
 
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-base.json'
+    selected_config = 'roberta_large_config_add_val.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
