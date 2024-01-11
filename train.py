@@ -3,7 +3,6 @@ import random
 from tqdm.auto import tqdm
 from typing import Dict
 import json
-import importlib
 
 import pandas as pd
 import numpy as np
@@ -58,6 +57,8 @@ def main(config: Dict):
         test_path(str): dev data 경로
         predict_path(str): 실제 inference에 사용할 data 경로
 
+        deepspeed(bool) : deepspeed 사용 여부
+
     터미널 실행 예시 : python3 train.py --model_name=klue/bert-base
 
     """
@@ -74,6 +75,9 @@ def main(config: Dict):
     parser.add_argument('--dev_path', default=config['path']['dev_path'], type=str)
     parser.add_argument('--test_path', default=config['path']['test_path'], type=str)
     parser.add_argument('--predict_path', default=config['path']['predict_path'], type=str)
+
+    parser.add_argument('--deepspeed', default=config['path']['predict_path'], type=bool)
+
     args = parser.parse_args()
 
     wandb_logger = WandbLogger(name=config['wandb']['wandb_run_name'], project=config['wandb']['wandb_project_name'], entity=config['wandb']['wandb_entity_name']) # config로 설정 관리
@@ -101,7 +105,16 @@ def main(config: Dict):
 
 
     # gpu가 없으면 accelerator="cpu"로 변경해주세요, gpu가 여러개면 'devices=4'처럼 사용하실 gpu의 개수를 입력해주세요
-    trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, callbacks=[checkpoint_callback,early_stop_custom_callback],log_every_n_steps=1,logger=wandb_logger)
+    # deepspeed
+    if args.deepspeed == True:
+        trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
+                            strategy="deepspeed_stage_2", precision=16,
+                            callbacks=[checkpoint_callback,early_stop_custom_callback],
+                            log_every_n_steps=1,logger=wandb_logger)
+        
+    else:
+        trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
+                            callbacks=[checkpoint_callback,early_stop_custom_callback],log_every_n_steps=1,logger=wandb_logger)
 
     # Train part
     trainer.fit(model=model, datamodule=dataloader)
@@ -117,7 +130,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-base.json'
+    selected_config = 'roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
