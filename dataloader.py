@@ -49,7 +49,9 @@ class Dataloader(pl.LightningDataModule):
         """ 처음 불러온 csv 파일을 원하는 형태의 DataFrame으로 변경 시켜줍니다."""
         # remain original dataset as-is
         out_dataset = data.copy()
+
         # {'word': '비틀즈', 'start_idx': 24, 'end_idx': 26, 'type': 'ORG'} -> '비틀즈'
+        # 여기서 갑자기 keyerror?
         out_dataset['subject_entity'] = out_dataset['subject_entity'].apply(lambda x: ast.literal_eval(x)) # turn string formatted like dict into real dict
         out_dataset['object_entity'] = out_dataset['object_entity'].apply(lambda x: ast.literal_eval(x))
 
