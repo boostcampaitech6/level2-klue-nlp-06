@@ -18,7 +18,8 @@
         "infer_batch_size": 32,
         "max_epoch": 1,
         "shuffle": true,
-        "learning_rate": 1e-5
+        "learning_rate": 1e-5,
+        "val_mode": false
     },
 
     "path": {
