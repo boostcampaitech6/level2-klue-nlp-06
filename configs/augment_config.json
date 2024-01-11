@@ -1,0 +1,39 @@
+{
+    "seed" : 42,
+    
+    "model_name" : "klue/roberta-large",
+    
+    "tokenizers" : {
+        "return_tensors" : "pt",
+        "padding" : true,
+        "truncation" : true,
+        "maxlength" : 256,
+        "add_special_tokens": true
+    },
+
+    "training_arguments" : {
+        "output_dir": "./augmentation/output",
+        "overwrite_output_dir" : true,
+        "learning_rate" : 0.00001,
+        "num_train_epochs" : 2,
+        "per_gpu_train_batch_size" : 16,
+        "save_steps" : 1000,
+        "save_total_limit" : 2,
+        "logging_steps" : 100,
+        "weight_decay" : 0.01
+    },
+    
+    "DataCollatorForLanguageModeling" : {
+        "mlm": true,
+        "mlm_probability" : 0.15
+    },
+
+    "data_path" : {
+        "train_path": "./dataset/train.csv",
+        "dev_path": "./dataset/train.csv",
+        "test_path": "./dataset/train.csv",
+        "predict_path": "./dataset/test.csv",
+        "save_path" : "./augmentation/augment"
+    }
+  
+}
