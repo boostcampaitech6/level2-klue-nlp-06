@@ -2,30 +2,31 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "first_run",
-        "wandb_project_name": "your_project",
+        "wandb_run_name" : "refactor_test_01",
+        "wandb_project_name": "jaehun_project",
         "wandb_entity_name": "be-our-friend"        
     },
     
     "arch": {
         "model_name": "klue/bert-base",
-        "selected_model": "Model",
-        "model_detail": "v"
+        "model_class": "Model",
+        "model_detail": ""
     },
 
     "trainer": {
-        "batch_size": 32,
-        "infer_batch_size": 32,
+        "batch_size": 64,
+        "infer_batch_size": 64,
         "max_epoch": 1,
         "shuffle": true,
         "learning_rate": 1e-5,
+        "deepspeed": false,
         "val_mode": false
     },
 
     "path": {
-        "train_path": "./dataset/train.csv",
-        "dev_path": "./dataset/train.csv",
-        "test_path": "./dataset/train.csv",
-        "predict_path": "./dataset/test.csv"}
-
+        "train_path": "./dataset/without_dup_train.csv",
+        "dev_path": "./dataset/without_dup_dev.csv",
+        "test_path": "./dataset/without_dup_dev.csv",
+        "predict_path": "./dataset/test_data.csv"
+    }
 }

@@ -4,6 +4,8 @@
 ### Manual ###
 dataset/*
 wandb/*
+best_model/*
+
 
 
 ### JupyterNotebooks ###
