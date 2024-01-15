@@ -13,7 +13,7 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 
-from train import set_seed
+from entity_train import set_seed
 
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.entity_model import EntityModel as Model

@@ -17,46 +17,48 @@ from train import set_seed
 
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
-from utils.utils import *
 
 
 def inference(model, tokenized_sent, device, batch_size=16):
-    """
-      test dataset을 DataLoader로 만들어 준 후,
-      batch_size로 나눠 model이 예측 합니다.
-    """
-    dataloader = DataLoader(tokenized_sent, batch_size, shuffle=False)
-    model.eval()
-    output_pred = []
-    output_prob = []
-    for i, data in enumerate(tqdm(dataloader)):
-        with torch.inference_mode():
-            outputs = model(input_ids=data['input_ids'].to(device), 
-                            attention_mask=data['attention_mask'].to(device), 
-                            token_type_ids=data['token_type_ids'].to(device))
+  """
+    test dataset을 DataLoader로 만들어 준 후,
+    batch_size로 나눠 model이 예측 합니다.
+  """
+  dataloader = DataLoader(tokenized_sent, batch_size, shuffle=False)
+  model.eval()
+  output_pred = []
+  output_prob = []
+  for i, data in enumerate(tqdm(dataloader)):
 
-        logits = outputs # (batch_size, 30)
+    with torch.inference_mode():
+      outputs = model(
+          input_ids=data['input_ids'].to(device),
+          attention_mask=data['attention_mask'].to(device),
+          token_type_ids=data['token_type_ids'].to(device)
+          )
 
-        prob = F.softmax(logits, dim=-1).detach().cpu().numpy() # shape : (batch_size, 30)
-        logits = logits.detach().cpu().numpy()
-        result = np.argmax(logits, axis=-1) # shape : (batch_size, 1)
+    logits = outputs # (batch_size, 30)
 
-        output_pred.append(result) 
-        output_prob.append(prob)
+    prob = F.softmax(logits, dim=-1).detach().cpu().numpy() # shape : (batch_size, 30)
+    logits = logits.detach().cpu().numpy()
+    result = np.argmax(logits, axis=-1) # shape : (batch_size, 1)
 
-    return np.concatenate(output_pred).tolist(), np.concatenate(output_prob, axis=0).tolist()
+    output_pred.append(result) 
+    output_prob.append(prob)
+
+  return np.concatenate(output_pred).tolist(), np.concatenate(output_prob, axis=0).tolist()
 
 def num_to_label(label):
-    """
-      숫자로 되어 있던 class를 원본 문자열 라벨로 변환 합니다.
-    """
-    origin_label = []
-    with open('./utils/dict_num_to_label.pkl', 'rb') as f:
-        dict_num_to_label = pickle.load(f)
-    for v in label:
-        origin_label.append(dict_num_to_label[v])
+  """
+    숫자로 되어 있던 class를 원본 문자열 라벨로 변환 합니다.
+  """
+  origin_label = []
+  with open('./utils/dict_num_to_label.pkl', 'rb') as f:
+    dict_num_to_label = pickle.load(f)
+  for v in label:
+    origin_label.append(dict_num_to_label[v])
   
-    return origin_label
+  return origin_label
 
 def main(config: Dict):
     set_seed(config)
@@ -73,35 +75,32 @@ def main(config: Dict):
     python3 zero_to_fp32.py '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
     '''
 
-    if config['trainer']['deepspeed']:
-        CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
-        checkpoint = torch.load(CHKPOINT_PATH)
+    if config['deepspeed'] == True:
+      CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
+      checkpoint = torch.load(CHKPOINT_PATH)
 
-        model = Model(config['arch']['model_name'], config['trainer']['learning_rate'])
-        model.load_state_dict(checkpoint)
-        # model.parameters
+      model = Model(config['arch']['model_name'], config['trainer']['learning_rate'])
+      model.load_state_dict(checkpoint)
+      model.parameters
 
     else:
-        MODEL_PATH = get_latest_version(full_model_name=config['arch']['model_name'], 
-                                        model_save_dir="./best_model/", 
-                                        return_path=True)
-        model = torch.load(MODEL_PATH)
-        # model.parameters
-      
-    print(f"\nCurrently inferencing {MODEL_PATH.stem}...\n")
+      MODEL_PATH = './best_model/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.pt'# model dir.
+      model = torch.load(MODEL_PATH)
+      model.parameters
+    
     model.to(device)
 
     ## load test datset
     dataloader=Dataloader(config['arch']['model_name'], config['trainer']['batch_size'], config['trainer']['shuffle'], config['path']['train_path'], config['path']['dev_path'],
-                          config['path']['test_path'],config['path']['predict_path'])
+                            config['path']['test_path'],config['path']['predict_path'])
     
     # dataset 생성
     dataloader.setup(stage='inference')
     
     if config['trainer']['val_mode']:
-        pred_dataset = dataloader.test_dataset
+       pred_dataset = dataloader.test_dataset
     else:
-        pred_dataset = dataloader.predict_dataset
+       pred_dataset = dataloader.predict_dataset
 
     ## predict answer
     pred_answer, output_prob = inference(model,pred_dataset, device, config['trainer']['infer_batch_size']) # model에서 class 추론
@@ -111,21 +110,18 @@ def main(config: Dict):
     # 아래 directory와 columns의 형태는 지켜주시기 바랍니다.
     if config['trainer']['val_mode']:
         output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,'label':dataloader.test_dataset[:]['labels'].tolist()})
-        save_path = "./prediction/" + "val" + "_" + MODEL_PATH.stem + "_" + "submission.csv"
-        output.to_csv(save_path, index=False)
+        output.to_csv('./prediction/'+'val_'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False)
     else:
        pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
        output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,})
-       save_path = "./prediction/" + MODEL_PATH.stem + "_" + "submission.csv"
-       output.to_csv(save_path, index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
+       output.to_csv('./prediction/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
-    print(f"Result saved in {save_path}")
     print('---- Finish! ----')
 
 
 if __name__ == '__main__':
 
-    selected_config = 'base_config.json'
+    selected_config = 'roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
