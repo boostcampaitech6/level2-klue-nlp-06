@@ -23,11 +23,11 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 
-from dataloader import *
-from models import base_model
+from entity_dataloader import EntityTypeDataloader as DataLoader
+from models import entity_model
 from utils.utils import *
 
-MODEL = base_model
+MODEL = entity_model
 
 def set_seed(config: Dict):
     seed = config['seed']
@@ -94,8 +94,8 @@ def main(config: Dict):
                                entity=config['wandb']['wandb_entity_name']) # config로 설정 관리
 
     # dataloader와 model을 생성합니다.
-    dataloader = Dataloader(args.model_name, args.batch_size, args.shuffle, args.train_path, args.dev_path,
-                            args.test_path, args.predict_path)
+    dataloader = DataLoader(args.model_name, args.batch_size, args.shuffle, args.train_path, args.dev_path, 
+                                  args.test_path, args.predict_path)
     model = getattr(MODEL, args.model_class)(args.model_name, args.learning_rate)
 
     early_stop_custom_callback = EarlyStopping(
@@ -121,7 +121,7 @@ def main(config: Dict):
         trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
                              strategy="deepspeed_stage_2", precision=16,
                              callbacks=[checkpoint_callback,early_stop_custom_callback],
-                             log_every_n_steps=1,logger=wandb_logger)
+                             log_every_n_steps=1, logger=wandb_logger)
     else:
         trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
                              callbacks=[checkpoint_callback,early_stop_custom_callback],log_every_n_steps=1,logger=wandb_logger)
@@ -136,11 +136,6 @@ def main(config: Dict):
     # Checkpoint load option 1 
     model = getattr(MODEL, args.model_class).load_from_checkpoint(best_checkpoint_path)
 
-    # Checkpoint load option 2
-    # model = getattr(MODEL, args.model_class)(args.model_name, args.learning_rate)
-    # checkpoint = torch.load(best_checkpoint_path)
-    # model.load_state_dict(checkpoint['state_dict'])
-
     save_name = model_name if model_detail == "" else model_name + "_" + model_detail
     save_path = model_save_dir + save_name + ".pt"
     torch.save(model, save_path)
@@ -150,7 +145,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'base_config.json'
+    selected_config = 'entity_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

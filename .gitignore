@@ -5,6 +5,10 @@
 dataset/*
 wandb/*
 best_model/*
+encoding/*
+prediction/klue_*.csv
+lightning_logs/*
+pipeline.ipynb
 
 
 

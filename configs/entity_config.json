@@ -2,15 +2,15 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "base_without_dup_base",
+        "wandb_run_name" : "entity_origin_type_without_dup_base",
         "wandb_project_name": "jaehun_project",
         "wandb_entity_name": "be-our-friend"        
     },
     
     "arch": {
         "model_name": "klue/roberta-base",
-        "model_class": "Model",
-        "model_detail": ""
+        "model_class": "EntityModel",
+        "model_detail": "entity type"
     },
 
     "trainer": {
