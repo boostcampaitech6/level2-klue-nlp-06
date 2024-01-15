@@ -9,9 +9,9 @@
     
     "arch": {
         "model_name": "klue/roberta-large",
-        "selected_model": "Model",
-        "model_detail": "v1",
-        "representation_style": "baseline"
+        "selected_model": "EntityMarkerModel",
+        "model_detail": "representation-klue",
+        "representation_style": "klue"
     },
 
     "trainer": {

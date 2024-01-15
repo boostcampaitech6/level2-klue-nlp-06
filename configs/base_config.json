@@ -10,7 +10,8 @@
     "arch": {
         "model_name": "klue/bert-base",
         "selected_model": "Model",
-        "model_detail": "v"
+        "model_detail": "v",
+        "representation_style": "None"
     },
 
     "trainer": {
@@ -25,6 +26,7 @@
         "train_path": "./dataset/train.csv",
         "dev_path": "./dataset/train.csv",
         "test_path": "./dataset/train.csv",
-        "predict_path": "./dataset/test.csv"}
-
+        "predict_path": "./dataset/test.csv"},
+    
+    "deepspeed": false
 }
