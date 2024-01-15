@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments
 from torch.utils.data import DataLoader
-from dataloader import Dataloader
+from dataloader import *
 
 from typing import Dict
 import json
@@ -12,23 +12,27 @@ import pickle as pickle
 import numpy as np
 import argparse
 from tqdm import tqdm
+import pytorch_lightning as pl
 
 from train import set_seed
 
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
-
+from models.entity_marker_model import EntityMarkerModel
 
 def inference(model, tokenized_sent, device, batch_size=16):
   """
     test dataset을 DataLoader로 만들어 준 후,
     batch_size로 나눠 model이 예측 합니다.
   """
+  # self, model_name, representation_style, batch_size, shuffle, train_path, dev_path, test_path, predict_path
   dataloader = DataLoader(tokenized_sent, batch_size, shuffle=False)
   model.eval()
   output_pred = []
   output_prob = []
-  for i, data in enumerate(tqdm(dataloader)):
+
+  
+  for _, data in enumerate(tqdm(dataloader)):
 
     with torch.inference_mode():
       outputs = model(
@@ -47,6 +51,7 @@ def inference(model, tokenized_sent, device, batch_size=16):
     output_prob.append(prob)
 
   return np.concatenate(output_pred).tolist(), np.concatenate(output_prob, axis=0).tolist()
+
 
 def num_to_label(label):
   """
@@ -74,31 +79,69 @@ def main(config: Dict):
     -> 실행 후 ckpt 폴더 이름과 동일한 이름으로 bin 파일 생성하기
     python3 zero_to_fp32.py '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
     '''
+    CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
 
-    if config['deepspeed'] == True:
-      CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
+    # baseline 아닌 경우
+    # config 존재하는지 여부
+    if config['arch']['representation_style'] != "None":
       checkpoint = torch.load(CHKPOINT_PATH)
+      
+      tokenizer = AutoTokenizer.from_pretrained(config['arch']['model_name'], max_length=256)
 
-      model = Model(config['arch']['model_name'], config['trainer']['learning_rate'])
+      ### special tokens 추가 ###
+      if config['arch']['representation_style'] == 'klue':
+         special_tokens_dict = {'additional_special_tokens': ['<subj>', '</subj>', '<obj>', '</obj>']}
+        
+      elif config['arch']['representation_style'] == 'matching_the_blank':
+        special_tokens_dict = {'additional_special_tokens': ['[E1]', '[/E1]', '[E2]', '</E2>']}
+
+      elif config['arch']['representation_style'] ==  'typed_marker':
+        special_tokens_dict = {'additional_special_tokens': ['<s:ORG>', '<s:PER>', '</s:ORG>', '</s:PER>', '<o:PER>', '<o:ORG>', '<o:DAT>', '<o:LOC>', '<o:POH>', '<o:NOH>', '</o:PER>', '</o:ORG>', '</o:DAT>', '</o:LOC>', '</o:POH>', '</o:NOH>']}
+      
+      # 추가 안되는 경우!
+      else:
+         special_tokens_dict = {'additional_special_tokens' : []}
+
+      num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
+
+      model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
       model.load_state_dict(checkpoint)
-      model.parameters
+      model.to(device)
 
+      ## load test datset
+      dataloader = EntityDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
+                              config['trainer']['batch_size'], config['trainer']['shuffle'], 
+                              config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+
+      trainer = pl.Trainer(accelerator="gpu", devices=1,strategy="deepspeed_stage_2", precision=16)
+      output_prob = torch.cat(trainer.predict(model=model, datamodule=dataloader))
+      output_prob = F.softmax(output_prob.float(), -1)
+      pred_answer = output_prob.argmax(-1).tolist()
+      output_prob = output_prob.tolist()
+
+
+    # pt file load
     else:
-      MODEL_PATH = './best_model/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.pt'# model dir.
-      model = torch.load(MODEL_PATH)
-      model.parameters
-    
-    model.to(device)
+        MODEL_PATH = './best_model/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.pt'# model dir.
+        model = torch.load(MODEL_PATH)
+        model.to(device)
+        # dataset 생성
+        dataloader=Dataloader(config['arch']['model_name'], 
+                              config['trainer']['batch_size'], config['trainer']['shuffle'], 
+                              config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+  
+        dataloader.setup(stage='inference')
 
-    ## load test datset
-    dataloader=Dataloader(config['arch']['model_name'], config['trainer']['batch_size'], config['trainer']['shuffle'], config['path']['train_path'], config['path']['dev_path'],
-                            config['path']['test_path'],config['path']['predict_path'])
+        if config['trainer']['val_mode']:
+          pred_dataset = dataloader.test_dataset
+        else:
+          pred_dataset = dataloader.predict_dataset
+
+        # predict answer
+        pred_answer, output_prob = inference(model, pred_dataset, device, config['trainer']['infer_batch_size']) # model에서 class 추론
     
-    # dataset 생성
-    dataloader.setup(stage='inference')
-    pred_dataset = dataloader.predict_dataset
-    ## predict answer
-    pred_answer, output_prob = inference(model,pred_dataset, device, config['trainer']['infer_batch_size']) # model에서 class 추론
+
+
     pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
     
     ## make csv file with predicted answer
@@ -113,7 +156,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-large_config.json'
+    selected_config = 'roberta-large_entity_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
