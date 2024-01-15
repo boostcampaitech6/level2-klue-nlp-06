@@ -1,0 +1,13 @@
+{
+    "seed" : 42,
+    
+    "augment_target" : 1000,
+    
+    "model_name" : "meenham/tapt-roberta-large-bs256-ep100",
+    
+    "data_path" : { 
+        "train_path" : "./dataset/without_dup_train.csv",
+        "val_path" : "./dataset/without_dup_dev.csv"
+    }
+
+}
