@@ -12,11 +12,12 @@
     },
 
     "training_arguments" : {
-        "output_dir": "./augmentation/output",
+        "output_dir": "./augmentation/output_v1",
         "overwrite_output_dir" : true,
         "learning_rate" : 0.00001,
-        "num_train_epochs" : 2,
+        "num_train_epochs" : 100,
         "per_gpu_train_batch_size" : 16,
+        "gradient_accumulation_steps" : 16,
         "save_steps" : 1000,
         "save_total_limit" : 2,
         "logging_steps" : 100,
@@ -31,9 +32,9 @@
     "data_path" : {
         "train_path": "./dataset/train.csv",
         "dev_path": "./dataset/train.csv",
-        "test_path": "./dataset/train.csv",
-        "predict_path": "./dataset/test.csv",
-        "save_path" : "./augmentation/augment"
+        "test_path": "./dataset/test_data.csv",
+        "predict_path": "./dataset/test_data.csv",
+        "save_path" : "./augmentation/augment_v1"
     }
   
 }

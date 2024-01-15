@@ -22,7 +22,7 @@ class AugmentDataset(Dataset):
         
         train_df = pd.read_csv(augment_config['data_path']['train_path'])
         test_df = pd.read_csv(augment_config['data_path']['test_path'])
-        total_df = pd.concat([train_df, test_df])
+        total_df = pd.concat([train_df, test_df], ignore_index=True)
         
         self.tokenizer = tokenizer
         
@@ -80,6 +80,7 @@ if __name__ == "__main__":
         learning_rate = augment_config["training_arguments"]["learning_rate"],
         num_train_epochs = augment_config["training_arguments"]["num_train_epochs"],
         per_device_train_batch_size = augment_config["training_arguments"]["per_gpu_train_batch_size"],
+        gradient_accumulation_steps = augment_config["training_arguments"]["gradient_accumulation_steps"],
         save_steps = augment_config["training_arguments"]["save_steps"],
         save_total_limit = augment_config["training_arguments"]["save_total_limit"],
         logging_steps = augment_config["training_arguments"]["logging_steps"],
@@ -93,5 +94,5 @@ if __name__ == "__main__":
         train_dataset = dataset,
         )    
 
-    trainer.train()
+    trainer.train(resume_from_checkpoint="./augmentation/output_v1/checkpoint-14000")
     trainer.save_model(augment_config["data_path"]["save_path"])
