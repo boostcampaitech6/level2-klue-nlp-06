@@ -23,7 +23,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 
-from entity_dataloader import EntityTypeDataloader as DataLoader
+from entity_dataloader import EntityBinaryDataloader as DataLoader
 from models import entity_model
 from utils.utils import *
 
