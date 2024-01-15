@@ -2,15 +2,15 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "klue/roberta-large/representation-klue",
+        "wandb_run_name" : "pretrained-roberta-large/representation-klue(stratified)",
         "wandb_project_name": "yewon_project",
         "wandb_entity_name": "be-our-friend"        
     },
     
     "arch": {
-        "model_name": "klue/roberta-large",
+        "model_name": "NLPBada/klue-roberta-large-tapt-bs256-ep30",
         "selected_model": "EntityMarkerModel",
-        "model_detail": "representation-klue",
+        "model_detail": "representation-klue-v1",
         "representation_style": "klue"
     },
 
@@ -24,10 +24,10 @@
     },
 
     "path": {
-        "train_path": "./dataset/train/train_split.csv",
-        "dev_path": "./dataset/dev_local/dev_split.csv",
-        "test_path": "./dataset/dev_local/dev_split.csv",
-        "predict_path": "./dataset/test/test.csv"
+        "train_path": "./dataset/stratified_without_dup_train.csv",
+        "dev_path": "./dataset/stratified_without_dup_dev.csv",
+        "test_path": "./dataset/stratified_without_dup_dev.csv",
+        "predict_path": "./dataset/test.csv"
     },
 
     "deepspeed": true
