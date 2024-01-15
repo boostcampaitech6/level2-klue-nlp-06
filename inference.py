@@ -13,7 +13,7 @@ import numpy as np
 import argparse
 from tqdm import tqdm
 
-from train import set_seed
+from utils.seed import set_seed
 
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
@@ -79,7 +79,7 @@ def main(config: Dict):
       CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
       checkpoint = torch.load(CHKPOINT_PATH)
 
-      model = Model(config['arch']['model_name'], config['trainer']['learning_rate'])
+      model = Model(config['arch']['model_name'], config['trainer']['learning_rate'], config['arch']['loss_func'])
       model.load_state_dict(checkpoint)
       model.parameters
 
@@ -121,7 +121,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-large_config.json'
+    selected_config = 'focal_test.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
