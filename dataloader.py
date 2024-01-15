@@ -134,8 +134,11 @@ class Dataloader(pl.LightningDataModule):
 
 class EntityDataset(torch.utils.data.Dataset):
   """ entity representation 구성을 위한 class."""
-  def __init__(self, inputs, labels, ss_arr=None, os_arr=None):
-    self.inputs = inputs
+  def __init__(self, input_ids, token_type_ids, attention_mask, labels, ss_arr=None, os_arr=None):
+    self.input_ids = input_ids
+    self.token_type_ids = token_type_ids
+    self.attention_mask = attention_mask
+    
     self.labels = labels
 
     # ss, os 추가를 위해 넣어주기
@@ -144,15 +147,17 @@ class EntityDataset(torch.utils.data.Dataset):
 
   def __getitem__(self, idx):
     if len(self.labels) == 0:
-        return (torch.tensor(self.inputs[idx]), torch.tensor([]), 
-                torch.tensor(self.ss_arr[idx]), torch.tensor(self.os_arr[idx]))
+        return (torch.tensor(self.input_ids[idx]), torch.tensor(self.attention_mask[idx]), torch.tensor(self.token_type_ids[idx]),
+                torch.tensor([]), torch.tensor(self.ss_arr[idx]), torch.tensor(self.os_arr[idx]))
+    
     else:
-        return (torch.tensor(self.inputs[idx]), torch.tensor(self.labels[idx]), 
-                torch.tensor(self.ss_arr[idx]), torch.tensor(self.os_arr[idx]))
+
+        return (torch.tensor(self.input_ids[idx]), torch.tensor(self.attention_mask[idx]), torch.tensor(self.token_type_ids[idx]),
+                torch.tensor(self.labels[idx]), torch.tensor(self.ss_arr[idx]), torch.tensor(self.os_arr[idx]))
 
 
   def __len__(self):
-    return len(self.inputs)
+    return len(self.labels)
 
 
 class EntityDataloader(pl.LightningDataModule):
@@ -233,7 +238,7 @@ class EntityDataloader(pl.LightningDataModule):
         '''
         
         # out dataset에 추가하기
-        tokenized_sentences, ss_arr, os_arr = [], [], []
+        input_ids, attention_mask, token_type_ids, ss_arr, os_arr = [], [], [], [], []
         for _, item in tqdm(dataset.iterrows(), desc='tokenizing', total=len(dataset)):
             x_sentence = item['sentence']
 
@@ -343,11 +348,17 @@ class EntityDataloader(pl.LightningDataModule):
                                     max_length=256, 
                                     add_special_tokens=True)
 
-            tokenized_sentences.append(outputs['input_ids'])
+            input_ids.append(outputs['input_ids'])
+            token_type_ids.append(outputs['token_type_ids'])
+            attention_mask.append(outputs['attention_mask'])
+            
             ss_arr.append(ss)
             os_arr.append(os)
-            
-        return tokenized_sentences, ss_arr, os_arr
+        
+        
+        # return tokenized_sentences, ss_arr, os_arr
+        # {input_ids, token_type_ids, attention_mask}, ss_arr, os_arr
+        return input_ids, token_type_ids, attention_mask, ss_arr, os_arr
 
 
     def label_to_num(self, label: pd.Series):
@@ -361,11 +372,11 @@ class EntityDataloader(pl.LightningDataModule):
     def preprocessing(self, data):
         """ 텍스트 데이터를 전처리합니다. """
         dataset = self.load_data(data)
-        inputs, ss_arr, os_arr = self.tokenizing(dataset)
+        input_ids, token_type_ids, attention_mask, ss_arr, os_arr = self.tokenizing(dataset)
 
         targets = self.label_to_num(dataset['label'])
 
-        return inputs, targets, ss_arr, os_arr
+        return input_ids, token_type_ids, attention_mask, targets, ss_arr, os_arr
 
     def setup(self, stage='fit'):
         """ train, validation, inference를 진행합니다. """
@@ -373,19 +384,20 @@ class EntityDataloader(pl.LightningDataModule):
             train_data = pd.read_csv(self.train_path)
             val_data = pd.read_csv(self.dev_path)
 
-            train_inputs, train_targets, train_ss_arr, train_os_arr = self.preprocessing(train_data)
-            val_inputs, val_targets, valid_ss_arr, valid_os_arr = self.preprocessing(val_data)
+            train_inputs_ids, train_token_type_ids, train_attention_mask, train_targets, train_ss_arr, train_os_arr = self.preprocessing(train_data)
+            val_inputs_ids, val_token_type_ids, val_attention_mask, val_targets, valid_ss_arr, valid_os_arr = self.preprocessing(val_data)
 
-            self.train_dataset = EntityDataset(train_inputs, train_targets, train_ss_arr, train_os_arr)
-            self.val_dataset = EntityDataset(val_inputs, val_targets, valid_ss_arr, valid_os_arr)
+            self.train_dataset = EntityDataset(train_inputs_ids, train_token_type_ids, train_attention_mask, train_targets, train_ss_arr, train_os_arr)
+            self.val_dataset = EntityDataset(val_inputs_ids, val_token_type_ids, val_attention_mask, val_targets, valid_ss_arr, valid_os_arr)
         else:
             test_data = pd.read_csv(self.dev_path)
-            test_inputs, test_targets, test_ss_arr, test_os_arr = self.preprocessing(test_data)
-            self.test_dataset = EntityDataset(test_inputs, test_targets, test_ss_arr, test_os_arr)
+
+            test_inputs_ids, test_token_type_ids, test_attention_mask, test_targets, test_ss_arr, test_os_arr = self.preprocessing(test_data)
+            self.test_dataset = EntityDataset(test_inputs_ids, test_token_type_ids, test_attention_mask, test_targets, test_ss_arr, test_os_arr)
 
             predict_data = pd.read_csv(self.predict_path)
-            predict_inputs, predict_targets, predict_ss_arr, predict_os_arr = self.preprocessing(predict_data)
-            self.predict_dataset = EntityDataset(predict_inputs, predict_targets, predict_ss_arr, predict_os_arr)
+            predict_inputs_ids, predict_token_type_ids, predict_attention_mask, predict_targets, predict_ss_arr, predict_os_arr = self.preprocessing(predict_data)
+            self.predict_dataset = EntityDataset(predict_inputs_ids, predict_token_type_ids, predict_attention_mask, predict_targets, predict_ss_arr, predict_os_arr)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)

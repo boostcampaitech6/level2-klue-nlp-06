@@ -60,6 +60,7 @@ def num_to_label(label):
   origin_label = []
   with open('./utils/dict_num_to_label.pkl', 'rb') as f:
     dict_num_to_label = pickle.load(f)
+
   for v in label:
     origin_label.append(dict_num_to_label[v])
   
@@ -80,6 +81,7 @@ def main(config: Dict):
     python3 zero_to_fp32.py '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
     '''
     CHKPOINT_PATH = './best_model/' + '_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.ckpt/' +'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split()) + '.bin'
+    print('### CHKPOINT_PATH : ', CHKPOINT_PATH)
 
     # baseline 아닌 경우
     # config 존재하는지 여부
@@ -140,8 +142,6 @@ def main(config: Dict):
         # predict answer
         pred_answer, output_prob = inference(model, pred_dataset, device, config['trainer']['infer_batch_size']) # model에서 class 추론
     
-
-
     pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
     
     ## make csv file with predicted answer
@@ -151,7 +151,6 @@ def main(config: Dict):
         output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,'label':dataloader.test_dataset[:]['labels'].tolist()})
         output.to_csv('./prediction/'+'val_'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False)
     else:
-       pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
        output = pd.DataFrame({'id':pd.Series(range(len(pred_answer))),'pred_label':pred_answer,'probs':output_prob,})
        output.to_csv('./prediction/'+'_'.join(config['arch']['model_name'].split('/') + config['arch']['model_detail'].split())+'_submission.csv', index=False) # 최종적으로 완성된 예측한 라벨 csv 파일 형태로 저장.
     #### 필수!! ##############################################
@@ -160,7 +159,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-large_entity_config.json'
+    selected_config = 'pretrained_roberta-large_entity_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

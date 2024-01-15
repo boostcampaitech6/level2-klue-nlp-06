@@ -153,7 +153,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
     ### config change part ###
-    selected_config = 'roberta-large_entity_config.json'
+    selected_config = 'pretrained_roberta-large_entity_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

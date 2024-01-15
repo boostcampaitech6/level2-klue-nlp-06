@@ -7,6 +7,8 @@ from torch import nn
 import pytorch_lightning as pl
 
 from metric import *
+import os
+CACHE_DIR = '/data/ephemeral/cache'
 
 class EntityMarkerModel(pl.LightningModule):
 
@@ -20,10 +22,9 @@ class EntityMarkerModel(pl.LightningModule):
         self.model_config = AutoConfig.from_pretrained(self.model_name)
         self.model_config.num_labels = 30
 
-        # 모델
-        # classifier 따로 부착하기
-        self.model = RobertaModel.from_pretrained(self.model_name, config=self.model_config)
-        # self.model = AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
+        # cache dir 추가
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        self.model = RobertaModel.from_pretrained(self.model_name, config=self.model_config, cache_dir=CACHE_DIR)
         
         # 스페셜 토큰 추가에 따른 토큰 임베딩 조절
         self.model.resize_token_embeddings(len(tokenizer))
@@ -44,10 +45,16 @@ class EntityMarkerModel(pl.LightningModule):
         self.loss_func = torch.nn.CrossEntropyLoss()
 
     # Override base_model -> override 안돼서 바꾼 버전..
-    def forward(self, input_ids=None, ss=None, os=None, **kwargs):
+    # input_ids -> tokenized_outputs(input_ids, token_type_ids, attention_masks)
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, ss=None, os=None, **kwargs):
         input_ids = input_ids.squeeze()
-        outputs = self.model(input_ids)
+        attention_mask = attention_mask.squeeze()
+        token_type_ids = token_type_ids.squeeze()
 
+        model_inputs = {'input_ids' : input_ids, 'token_type_ids' : token_type_ids, 'attention_mask' : attention_mask}
+
+        outputs = self.model(**model_inputs)
+        
         seq_output = outputs[0]
         pooled_output = outputs[1]
 
@@ -63,9 +70,9 @@ class EntityMarkerModel(pl.LightningModule):
         return logits
 
     def training_step(self, batch, batch_idx):
-        x, y, ss, os = batch
+        input_ids, token_type_ids, attention_mask, y, ss, os = batch
 
-        logits = self(x, ss=ss, os=os) # (bs, 30)
+        logits = self(input_ids, token_type_ids, attention_mask, ss=ss, os=os) # (bs, 30)
         loss = self.loss_func(logits, y)
 
         self.log("train_loss", loss)
@@ -73,9 +80,9 @@ class EntityMarkerModel(pl.LightningModule):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y, ss, os = batch
+        input_ids, token_type_ids, attention_mask, y, ss, os = batch
 
-        logits = self(x, ss=ss, os=os)
+        logits = self(input_ids, token_type_ids, attention_mask, ss=ss, os=os)
         loss = self.loss_func(logits, y)
         self.log("val_loss", loss)
         
@@ -87,18 +94,17 @@ class EntityMarkerModel(pl.LightningModule):
         return loss
 
     def test_step(self, batch, batch_idx):
-        x, y, ss, os = batch
+        input_ids, token_type_ids, attention_mask, y, ss, os = batch
 
-        logits = self(x, ss=ss, os=os)
+        logits = self(input_ids, token_type_ids, attention_mask, ss=ss, os=os)
         metrics_dict = compute_metrics(logits,y) 
 
         for metric_name, metric_value in metrics_dict.items():
             self.log(f"test {metric_name}", metric_value)
 
     def predict_step(self, batch, batch_idx):
-        x, y, ss, os = batch
-        logits = self(x, ss=ss, os=os)
-
+        input_ids, token_type_ids, attention_mask, y, ss, os = batch
+        logits = self(input_ids, token_type_ids, attention_mask, ss=ss, os=os)
 
         return logits
 
