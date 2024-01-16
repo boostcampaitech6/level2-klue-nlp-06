@@ -195,7 +195,14 @@ class EntityDataloader(pl.LightningDataModule):
         elif self.representation_style == 'typed_marker':
             # type에 따른 리스트 지정 새로 필요
             # dataset -> type unique 추출해서 모든 조합 붙이기 (in ipynb)
-            special_tokens_dict = {'additional_special_tokens': ['<s:ORG>', '<s:PER>', '</s:ORG>', '</s:PER>', '<o:PER>', '<o:ORG>', '<o:DAT>', '<o:LOC>', '<o:POH>', '<o:NOH>', '</o:PER>', '</o:ORG>', '</o:DAT>', '</o:LOC>', '</o:POH>', '</o:NOH>']}
+            special_tokens_dict = {'additional_special_tokens': ['<s:ORG>', '</s:ORG>', '<s:PER>', '</s:PER>', '<o:PER>', '</o:PER>', '<o:ORG>', '</o:ORG>', '<o:DAT>', '</o:DAT>','<o:LOC>', '</o:LOC>','<o:POH>', '</o:POH>','<o:NOH>','</o:NOH>']}
+        
+        elif self.representation_style == "typed_punct_marker":
+            special_tokens_dict = {'additional_special_tokens': ['*ORG*', '*PER*', '^PER^', '^ORG^', '^DAT^', '^LOC^','^POH^','^NOH^']}
+
+
+        else:
+            special_tokens_dict = {}
 
         # special tokens 추가
         num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)

@@ -100,6 +100,9 @@ def main(config: Dict):
       elif config['arch']['representation_style'] ==  'typed_marker':
         special_tokens_dict = {'additional_special_tokens': ['<s:ORG>', '<s:PER>', '</s:ORG>', '</s:PER>', '<o:PER>', '<o:ORG>', '<o:DAT>', '<o:LOC>', '<o:POH>', '<o:NOH>', '</o:PER>', '</o:ORG>', '</o:DAT>', '</o:LOC>', '</o:POH>', '</o:NOH>']}
       
+      elif config['arch']['representation_style'] == "typed_punct_marker":
+        special_tokens_dict = {'additional_special_tokens': ['*ORG*', '*PER*', '^PER^', '^ORG^', '^DAT^', '^LOC^','^POH^','^NOH^']}
+
       # 추가 안되는 경우!
       else:
          special_tokens_dict = {'additional_special_tokens' : []}
