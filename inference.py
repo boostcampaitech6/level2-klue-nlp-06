@@ -14,7 +14,7 @@ import argparse
 from tqdm import tqdm
 import pytorch_lightning as pl
 
-from train import set_seed
+from utils.seed import set_seed
 
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
@@ -167,8 +167,8 @@ def main(config: Dict):
 
 
 if __name__ == '__main__':
-
     selected_config = 'pretrained_roberta-large_pooling_config.json'
+
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

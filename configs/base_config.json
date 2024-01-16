@@ -12,6 +12,7 @@
         "selected_model": "Model",
         "model_detail": "v",
         "representation_style": "None"
+        "loss_func": "focal"
     },
 
     "trainer": {

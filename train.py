@@ -1,5 +1,4 @@
 import argparse
-import random
 from tqdm.auto import tqdm
 from typing import Dict
 import json
@@ -23,19 +22,10 @@ from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
 from models import base_model, entity_marker_model, entity_marker_pooling_model
+from utils.seed import set_seed
 
 # main에서 불러오는 걸로 수정
 # MODEL = base_model
-
-def set_seed(config: Dict):
-    seed = config['seed']
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # if use multi-GPU
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(seed)
-    random.seed(seed)
 
 def main(config: Dict):
     #seed 고정
@@ -70,6 +60,7 @@ def main(config: Dict):
     parser.add_argument('--model_name', default=config['arch']['model_name'], type=str)
     parser.add_argument('--model_detail', default=config['arch']['model_detail'], type=str)
     parser.add_argument('--representation_style', default=config['arch']['representation_style'], type=str)
+    parser.add_argument('--loss_func', default=config['arch']['loss_func'], type=str)
 
     parser.add_argument('--batch_size', default=config['trainer']['batch_size'], type=int)
     parser.add_argument('--max_epoch', default=config['trainer']['max_epoch'], type=int)
@@ -91,6 +82,7 @@ def main(config: Dict):
     print('### Check Model Arguments ... ###')
     print('model_name : ', args.model_name)
     print('model_detail : ', args.model_detail)
+    print('loss_func : ', args.loss_func)
     print('pooling : ', args.pooling)
 
     # dataloader와 model을 생성합니다.
@@ -104,8 +96,8 @@ def main(config: Dict):
             MODEL = entity_marker_pooling_model
         else:
             MODEL = entity_marker_model
-
-    model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer) # tokenizer에 따라서 resize 해줘야 하므로 인자에 추가
+    # loss function 추가
+    model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func) # tokenizer에 따라서 resize 해줘야 하므로 인자에 추가
 
 
     early_stop_custom_callback = EarlyStopping(
