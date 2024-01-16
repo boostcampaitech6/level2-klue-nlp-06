@@ -1,0 +1,37 @@
+{
+    "seed": 42,
+
+    "wandb": {
+        "wandb_run_name" : "pretrained-roberta-large/representation-typed_punct_marker-pooling",
+        "wandb_project_name": "yewon_project",
+        "wandb_entity_name": "be-our-friend"        
+    },
+    
+    "arch": {
+        "model_name": "meenham/tapt-roberta-large-bs256-ep100",
+        "selected_model": "EntityMarkerPoolingModel",
+        "model_detail": "representation-typed_punct_marker-pooling",
+        "representation_style": "typed_punct_marker"
+    },
+
+    "trainer": {
+        "batch_size": 16,
+        "infer_batch_size": 16,
+        "max_epoch": 30,
+        "shuffle": true,
+        "learning_rate": 1e-5,
+        "val_mode": false
+    },
+
+    "path": {
+        "train_path": "./dataset/without_dup_train.csv",
+        "dev_path": "./dataset/without_dup_dev.csv",
+        "test_path": "./dataset/without_dup_dev.csv",
+        "predict_path": "./dataset/test.csv"
+    },
+
+    "deepspeed": true,
+    
+    "pooling" : true
+
+}

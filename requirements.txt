@@ -1,10 +1,7 @@
 ###### Requirements without Version Specifiers ######
 argparse
 deepspeed
-'''
-deepspeed 패키지 설치 오류가 발생한다면 nvcc -V 커맨드 확인 후,
-not found error라면 nvidia toolkit을 설치해야 합니다.
-'''
+
 
 ###### Requirements with Version Specifiers ######
 pandas

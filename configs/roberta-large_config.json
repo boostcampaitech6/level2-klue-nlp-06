@@ -2,7 +2,7 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "klue/roberta-large",
+        "wandb_run_name" : "klue/roberta-large/representation-klue",
         "wandb_project_name": "yewon_project",
         "wandb_entity_name": "be-our-friend"        
     },
@@ -10,7 +10,8 @@
     "arch": {
         "model_name": "klue/roberta-large",
         "selected_model": "Model",
-        "model_detail": "v1"
+        "model_detail": "v1",
+        "representation_style": "baseline"
     },
 
     "trainer": {
@@ -18,7 +19,8 @@
         "infer_batch_size": 16,
         "max_epoch": 30,
         "shuffle": true,
-        "learning_rate": 1e-5
+        "learning_rate": 1e-5,
+        "val_mode": false
     },
 
     "path": {
@@ -28,6 +30,7 @@
         "predict_path": "./dataset/test/test.csv"
     },
 
-    "deepspeed": true
+    "deepspeed": true,
+    "pooling" : false
 
 }
