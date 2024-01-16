@@ -5,9 +5,10 @@ import torch
 import pytorch_lightning as pl
 
 from metric import *
+from utils.loss import *
 
 class Model(pl.LightningModule):
-    def __init__(self, model_name, lr):
+    def __init__(self, model_name, lr, loss_func):
         super().__init__()
         self.save_hyperparameters()
 
@@ -21,7 +22,10 @@ class Model(pl.LightningModule):
         self.model =  AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
 
         # Loss 
-        self.loss_func = torch.nn.CrossEntropyLoss()
+        if loss_func == 'focal':
+            self.loss_func = FocalLoss()
+        elif loss_func == 'CE':
+            self.loss_func = torch.nn.CrossEntropyLoss()
 
     def forward(self, **x):
         x = self.model(**x)['logits']
