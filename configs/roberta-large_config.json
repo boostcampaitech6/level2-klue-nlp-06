@@ -30,6 +30,7 @@
         "predict_path": "./dataset/test/test.csv"
     },
 
-    "deepspeed": true
+    "deepspeed": true,
+    "pooling" : false
 
 }
