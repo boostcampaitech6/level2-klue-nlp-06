@@ -12,5 +12,11 @@
         "val_path" : "./dataset/without_dup_dev.csv"
     },
 
-    "train_aug" : false
+    "train_aug" : false,
+
+    "threshold" : {
+        "train" : 900,
+        "val" : 100
+    }
+
 }
