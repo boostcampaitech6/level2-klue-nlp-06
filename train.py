@@ -22,7 +22,8 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
-from models import base_model, entity_marker_model, entity_marker_pooling_model
+from dataloader_endtoken import *
+from models import base_model, entity_marker_model, entity_marker_pooling_model, entity_marker_endtoken_model
 
 # main에서 불러오는 걸로 수정
 # MODEL = base_model
@@ -83,6 +84,7 @@ def main(config: Dict):
 
     parser.add_argument('--deepspeed', default=config['deepspeed'], type=bool)
     parser.add_argument('--pooling', default=config['pooling'], type=bool)
+    parser.add_argument('--endtoken', default=config['endtoken'], type=bool)
 
 
     args = parser.parse_args()
@@ -92,9 +94,14 @@ def main(config: Dict):
     print('model_name : ', args.model_name)
     print('model_detail : ', args.model_detail)
     print('pooling : ', args.pooling)
+    print('endtoken : ', args.endtoken)
 
     # dataloader와 model을 생성합니다.
-    dataloader = EntityDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
+    # end token 사용 여부에 따라 다른 dataloader 불러오기
+    if args.endtoken == False:
+        dataloader = EntityDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
+    else:
+        dataloader = EntityEndtokenDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
 
     # representation style에 따라서 모델 다르게 불러옴
     if args.representation_style == "None":
@@ -102,11 +109,12 @@ def main(config: Dict):
     else:
         if args.pooling == True:
             MODEL = entity_marker_pooling_model
+        elif args.endtoken == True:
+            MODEL = entity_marker_endtoken_model
         else:
             MODEL = entity_marker_model
 
     model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer) # tokenizer에 따라서 resize 해줘야 하므로 인자에 추가
-
 
     early_stop_custom_callback = EarlyStopping(
         "val micro f1 score", patience=3, verbose=True, mode="max"
@@ -130,19 +138,17 @@ def main(config: Dict):
                             strategy="deepspeed_stage_2", precision=16,
                             callbacks=[checkpoint_callback,early_stop_custom_callback],
                             log_every_n_steps=1,logger=wandb_logger)
+        trainer.fit(model=model, datamodule=dataloader)
+        model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
         
     else:
         trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
                             callbacks=[checkpoint_callback,early_stop_custom_callback],log_every_n_steps=1,logger=wandb_logger)
+        trainer.fit(model=model, datamodule=dataloader)
+        model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
 
-    # Train part
-    trainer.fit(model=model, datamodule=dataloader)
-    model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
-
-
-    ## pt file 생성
-    # deepspeed는 bin 생성 후 체크포인트로 load해야 함 (pt 생성 X)
-    if args.deepspeed == False:
+        ## pt file 생성
+        # deepspeed는 bin 생성 후 체크포인트로 load해야 함 (pt 생성 X)
         filename='./best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.ckpt'
         
         checkpoint = torch.load(filename)
@@ -152,9 +158,10 @@ def main(config: Dict):
         torch.save(model, './best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.pt')
 
 
+
 if __name__ == '__main__':
     ### config change part ###
-    selected_config = 'pretrained_roberta-large_pooling_config.json'
+    selected_config = 'pretrained_roberta-large_endtoken_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments
 from torch.utils.data import DataLoader
 from dataloader import *
+from dataloader_endtoken import *
 
 from typing import Dict
 import json
@@ -20,6 +21,7 @@ from train import set_seed
 from models.base_model import Model
 from models.entity_marker_model import EntityMarkerModel
 from models.entity_marker_pooling_model import EntityMarkerPoolingModel
+from models.entity_marker_endtoken_model import EntityMarkerEndtokenModel
 
 def inference(model, tokenized_sent, device, batch_size=16):
   """
@@ -113,6 +115,9 @@ def main(config: Dict):
       # pooling 한 경우 변경
       if config['pooling'] == True:
         model = EntityMarkerPoolingModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
+      # end token 추가한 경우 변경
+      elif config['endtoken'] == True:
+        model = EntityMarkerEndtokenModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
       else:
         model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
 
@@ -120,9 +125,15 @@ def main(config: Dict):
       model.to(device)
 
       ## load test datset
-      dataloader = EntityDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
-                              config['trainer']['batch_size'], config['trainer']['shuffle'], 
-                              config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+      if config['endtoken'] == True:
+        dataloader = EntityEndtokenDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
+                                config['trainer']['batch_size'], config['trainer']['shuffle'], 
+                                config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+        
+      else:
+        dataloader = EntityDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
+                                config['trainer']['batch_size'], config['trainer']['shuffle'], 
+                                config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
 
       trainer = pl.Trainer(accelerator="gpu", devices=1,strategy="deepspeed_stage_2", precision=16)
       output_prob = torch.cat(trainer.predict(model=model, datamodule=dataloader))
@@ -168,7 +179,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'pretrained_roberta-large_pooling_config.json'
+    selected_config = 'pretrained_roberta-large_endtoken_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
