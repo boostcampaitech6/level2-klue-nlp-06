@@ -19,6 +19,7 @@ from train import set_seed
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
 from models.entity_marker_model import EntityMarkerModel
+from models.entity_marker_pooling_model import EntityMarkerPoolingModel
 
 def inference(model, tokenized_sent, device, batch_size=16):
   """
@@ -109,7 +110,12 @@ def main(config: Dict):
 
       num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
 
-      model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
+      # pooling 한 경우 변경
+      if config['pooling'] == True:
+        model = EntityMarkerPoolingModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
+      else:
+        model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
+
       model.load_state_dict(checkpoint)
       model.to(device)
 
@@ -162,7 +168,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'pretrained_roberta-large_entity_config.json'
+    selected_config = 'pretrained_roberta-large_pooling_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

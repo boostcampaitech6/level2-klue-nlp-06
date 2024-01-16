@@ -22,7 +22,7 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
-from models import base_model, entity_marker_model
+from models import base_model, entity_marker_model, entity_marker_pooling_model
 
 # main에서 불러오는 걸로 수정
 # MODEL = base_model
@@ -82,6 +82,7 @@ def main(config: Dict):
     parser.add_argument('--predict_path', default=config['path']['predict_path'], type=str)
 
     parser.add_argument('--deepspeed', default=config['deepspeed'], type=bool)
+    parser.add_argument('--pooling', default=config['pooling'], type=bool)
 
 
     args = parser.parse_args()
@@ -90,6 +91,7 @@ def main(config: Dict):
     print('### Check Model Arguments ... ###')
     print('model_name : ', args.model_name)
     print('model_detail : ', args.model_detail)
+    print('pooling : ', args.pooling)
 
     # dataloader와 model을 생성합니다.
     dataloader = EntityDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
@@ -98,14 +100,13 @@ def main(config: Dict):
     if args.representation_style == "None":
         MODEL = base_model
     else:
-        MODEL = entity_marker_model
+        if args.pooling == True:
+            MODEL = entity_marker_pooling_model
+        else:
+            MODEL = entity_marker_model
 
     model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer) # tokenizer에 따라서 resize 해줘야 하므로 인자에 추가
 
-    # if args.representation_style == 'baseline':
-    #     model = getattr(base_model,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
-    # else:
-    #     model = entity_marker_model.EntityMarkerModel(args.model_name, args.learning_rate, dataloader.tokenizer)
 
     early_stop_custom_callback = EarlyStopping(
         "val micro f1 score", patience=3, verbose=True, mode="max"
@@ -137,8 +138,8 @@ def main(config: Dict):
     # Train part
     trainer.fit(model=model, datamodule=dataloader)
     model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
-    # model = getattr(entity_marker_model_class,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
-    
+
+
     ## pt file 생성
     # deepspeed는 bin 생성 후 체크포인트로 load해야 함 (pt 생성 X)
     if args.deepspeed == False:
@@ -153,7 +154,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
     ### config change part ###
-    selected_config = 'pretrained_roberta-large_entity_config.json'
+    selected_config = 'pretrained_roberta-large_pooling_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
