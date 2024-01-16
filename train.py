@@ -122,19 +122,17 @@ def main(config: Dict):
                             strategy="deepspeed_stage_2", precision=16,
                             callbacks=[checkpoint_callback,early_stop_custom_callback],
                             log_every_n_steps=1,logger=wandb_logger)
+        trainer.fit(model=model, datamodule=dataloader)
+        model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func)
         
     else:
         trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
                             callbacks=[checkpoint_callback,early_stop_custom_callback],log_every_n_steps=1,logger=wandb_logger)
+        trainer.fit(model=model, datamodule=dataloader)
+        model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func)
 
-    # Train part
-    trainer.fit(model=model, datamodule=dataloader)
-    model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer)
-
-
-    ## pt file 생성
-    # deepspeed는 bin 생성 후 체크포인트로 load해야 함 (pt 생성 X)
-    if args.deepspeed == False:
+        ## pt file 생성
+        # deepspeed는 bin 생성 후 체크포인트로 load해야 함 (pt 생성 X)
         filename='./best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.ckpt'
         
         checkpoint = torch.load(filename)
