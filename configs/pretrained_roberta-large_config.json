@@ -33,5 +33,5 @@
 
     "deepspeed": true,
     "pooling" : false,
-    "concat_num" : 5
+    "concat_num" : 4
 }
