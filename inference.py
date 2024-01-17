@@ -20,8 +20,6 @@ from utils.seed import set_seed
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
 from models.entity_marker_model import EntityMarkerModel
-from models.entity_marker_pooling_model import EntityMarkerPoolingModel
-from models.entity_marker_endtoken_model import EntityMarkerEndtokenModel
 
 def inference(model, tokenized_sent, device, batch_size=16):
   """
@@ -90,7 +88,6 @@ def main(config: Dict):
     # config 존재하는지 여부
     if config['arch']['representation_style'] != "None":
       checkpoint = torch.load(CHKPOINT_PATH)
-      
       tokenizer = AutoTokenizer.from_pretrained(config['arch']['model_name'], max_length=256)
 
       ### special tokens 추가 ###
@@ -112,14 +109,7 @@ def main(config: Dict):
 
       num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
 
-      # pooling 한 경우 변경
-      if config['pooling'] == True:
-        model = EntityMarkerPoolingModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
-      # end token 추가한 경우 변경
-      elif config['endtoken'] == True:
-        model = EntityMarkerEndtokenModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
-      else:
-        model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
+      model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer, config['arch']['loss_func'], config['pooling'], config['concat_num'])
 
       model.load_state_dict(checkpoint)
       model.to(device)
