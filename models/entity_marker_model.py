@@ -63,8 +63,13 @@ class EntityMarkerModel(pl.LightningModule):
         self.model_config = AutoConfig.from_pretrained(self.model_name)
         self.model_config.num_labels = 30
 
+        self.loss_func = loss_func
+        self.pooling = pooling
+        self.concat_num = concat_num
+
         # cache dir 추가
         os.makedirs(CACHE_DIR, exist_ok=True)
+        
         # AutoModel로 change
         self.model = AutoModel.from_pretrained(self.model_name, config=self.model_config, cache_dir=CACHE_DIR)
         
@@ -90,7 +95,7 @@ class EntityMarkerModel(pl.LightningModule):
 
     # Override base_model -> override 안돼서 바꾼 버전..
     # input_ids -> tokenized_outputs(input_ids, token_type_ids, attention_masks)
-    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, ss=None, os=None, **kwargs):
+    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, ss=None, os=None, se=None, oe=None, **kwargs):
         input_ids = input_ids.squeeze()
         attention_mask = attention_mask.squeeze()
         token_type_ids = token_type_ids.squeeze()
