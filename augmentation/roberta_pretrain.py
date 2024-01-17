@@ -94,5 +94,6 @@ if __name__ == "__main__":
         train_dataset = dataset,
         )    
 
-    trainer.train(resume_from_checkpoint="./augmentation/output_v1/checkpoint-14000")
+    #trainer.train(resume_from_checkpoint="./augmentation/output_v1/checkpoint-14000")
+    trainer.train()
     trainer.save_model(augment_config["data_path"]["save_path"])

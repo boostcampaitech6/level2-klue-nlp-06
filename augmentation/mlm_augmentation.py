@@ -50,6 +50,8 @@ def main(config):
      
     #no augmentation label dataframe화   
     not_to_augment_df = df[df['label'].isin(labels_not_to_augment)]
+    to_augment_df = df[df['label'].isin(labels_to_augment)]
+    
     
     list_augmented_df = []
     
@@ -93,6 +95,8 @@ def main(config):
                 
                 sentence = sentence.replace(subject_word,modified_subject_word_one)
                 sentence = sentence.replace(object_word,modified_object_word_one)
+                
+                model.eval()
                 
                 for _ in range(2):
                     sentence_split = sentence.split()
@@ -196,7 +200,7 @@ def main(config):
                 "subject_entity": new_subject_entities,
                 "object_entity": new_object_entities,
                 "label": new_labels,
-                "souce": new_sources,
+                "source": new_sources,
             }
         )
     
@@ -211,7 +215,8 @@ def main(config):
     for character in characters_to_remove:
         integrated_data['sentence'] = integrated_data['sentence'].str.replace(character,'')
     
-    total_data = pd.concat([integrated_data, not_to_augment_df], ignore_index=True )
+    total_data = pd.concat([integrated_data, to_augment_df])
+    total_data = pd.concat([total_data, not_to_augment_df], ignore_index=True )
     
     if config['train_aug'] == True:
         total_data.to_csv('./dataset/'+config['model_name'].split("/")[-1]+'-'+str(config['threshold'])+'-' + 'train.csv', index=False)
