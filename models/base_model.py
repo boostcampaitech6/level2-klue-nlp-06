@@ -5,9 +5,10 @@ import torch
 import pytorch_lightning as pl
 
 from metric import *
+from utils.loss import *
 
 class Model(pl.LightningModule):
-    def __init__(self, model_name, lr):
+    def __init__(self, model_name, lr, tokenizer, loss_func):
         super().__init__()
         self.save_hyperparameters()
 
@@ -18,10 +19,18 @@ class Model(pl.LightningModule):
         self.model_config.num_labels = 30
 
         # 모델
-        self.model =  AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
+        self.model = AutoModelForSequenceClassification.from_pretrained(self.model_name, config=self.model_config)
+        # 스페셜 토큰 추가에 따른 토큰 임베딩 조절
+        self.model.resize_token_embeddings(len(tokenizer))
+        # 토큰 임베딩에 따른 resize layer
+        print('### token embeddings : ', self.model.get_input_embeddings())
 
         # Loss 
-        self.loss_func = torch.nn.CrossEntropyLoss()
+        if loss_func == 'focal':
+            self.loss_func = FocalLoss()
+        elif loss_func == 'CE':
+            self.loss_func = torch.nn.CrossEntropyLoss()
+
 
     def forward(self, **x):
         x = self.model(**x)['logits']

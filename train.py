@@ -1,5 +1,4 @@
 import argparse
-import random
 from tqdm.auto import tqdm
 from typing import Dict
 import json
@@ -22,19 +21,11 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
-from models import base_model
+from models import base_model, entity_marker_model, entity_marker_pooling_model
+from utils.seed import set_seed
 
-MODEL = base_model
-
-def set_seed(config: Dict):
-    seed = config['seed']
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # if use multi-GPU
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(seed)
-    random.seed(seed)
+# main에서 불러오는 걸로 수정
+# MODEL = base_model
 
 def main(config: Dict):
     #seed 고정
@@ -46,6 +37,8 @@ def main(config: Dict):
     Args:
         model_name(str): Huggingface pretrained model name
         model_detail(str): checkpoint name에 사용될 모델 특이사항
+        representation_style(str): 어떤 형식의 representation 사용할 지
+        ['baseline', 'klue', 'matching_the_blank', 'punct', 'typed_marker', 'typed_punct_marker']
 
         batch_size(int): 배치 사이즈
         max_epoch(int): 학습 최대 epoch (earlystopping에 의해 중단될 수 있음)
@@ -58,6 +51,7 @@ def main(config: Dict):
         predict_path(str): 실제 inference에 사용할 data 경로
 
         deepspeed(bool) : deepspeed 사용 여부
+        
 
     터미널 실행 예시 : python3 train.py --model_name=klue/bert-base
 
@@ -65,6 +59,8 @@ def main(config: Dict):
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default=config['arch']['model_name'], type=str)
     parser.add_argument('--model_detail', default=config['arch']['model_detail'], type=str)
+    parser.add_argument('--representation_style', default=config['arch']['representation_style'], type=str)
+    parser.add_argument('--loss_func', default=config['arch']['loss_func'], type=str)
 
     parser.add_argument('--batch_size', default=config['trainer']['batch_size'], type=int)
     parser.add_argument('--max_epoch', default=config['trainer']['max_epoch'], type=int)
@@ -76,17 +72,32 @@ def main(config: Dict):
     parser.add_argument('--test_path', default=config['path']['test_path'], type=str)
     parser.add_argument('--predict_path', default=config['path']['predict_path'], type=str)
 
-    parser.add_argument('--deepspeed', default=config['path']['predict_path'], type=bool)
+    parser.add_argument('--deepspeed', default=config['deepspeed'], type=bool)
+    parser.add_argument('--pooling', default=config['pooling'], type=bool)
+
 
     args = parser.parse_args()
 
     wandb_logger = WandbLogger(name=config['wandb']['wandb_run_name'], project=config['wandb']['wandb_project_name'], entity=config['wandb']['wandb_entity_name']) # config로 설정 관리
+    print('### Check Model Arguments ... ###')
+    print('model_name : ', args.model_name)
+    print('model_detail : ', args.model_detail)
+    print('loss_func : ', args.loss_func)
+    print('pooling : ', args.pooling)
 
     # dataloader와 model을 생성합니다.
-    dataloader = Dataloader(args.model_name, args.batch_size, args.shuffle, args.train_path, args.dev_path,
-                            args.test_path, args.predict_path)
-    model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate)
+    dataloader = EntityDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
 
+    # representation style에 따라서 모델 다르게 불러옴
+    if args.representation_style == "None":
+        MODEL = base_model
+    else:
+        if args.pooling == True:
+            MODEL = entity_marker_pooling_model
+        else:
+            MODEL = entity_marker_model
+    # loss function 추가
+    model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func) # tokenizer에 따라서 resize 해줘야 하므로 인자에 추가
 
 
     early_stop_custom_callback = EarlyStopping(
@@ -111,26 +122,29 @@ def main(config: Dict):
                             strategy="deepspeed_stage_2", precision=16,
                             callbacks=[checkpoint_callback,early_stop_custom_callback],
                             log_every_n_steps=1,logger=wandb_logger)
+        trainer.fit(model=model, datamodule=dataloader)
         
     else:
         trainer = pl.Trainer(accelerator="gpu", devices=1, max_epochs=args.max_epoch, 
                             callbacks=[checkpoint_callback,early_stop_custom_callback],log_every_n_steps=1,logger=wandb_logger)
+        trainer.fit(model=model, datamodule=dataloader)
+        
 
-    # Train part
-    trainer.fit(model=model, datamodule=dataloader)
+        ## pt file 생성
+        # deepspeed는 bin 생성 후 체크포인트로 load해야 함 (pt 생성 X)
+        filename='./best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.ckpt'
+        
+        checkpoint = torch.load(filename)
+        model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func)
+        model.load_state_dict(checkpoint['state_dict'])
 
-    model = getattr(MODEL,config['arch']['selected_model'])(args.model_name, args.learning_rate)
-    filename='./best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.ckpt'
-    checkpoint = torch.load(filename)
-    model.load_state_dict(checkpoint['state_dict'])
-
-    # 학습이 완료된 모델을 저장합니다.
-    torch.save(model, './best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.pt')
+        # 학습이 완료된 모델을 저장합니다.
+        torch.save(model, './best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.pt')
 
 
 if __name__ == '__main__':
-
-    selected_config = 'roberta-large_config.json'
+    ### config change part ###
+    selected_config = 'pretrained_roberta-large_pooling_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
