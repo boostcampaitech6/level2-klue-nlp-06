@@ -2,7 +2,7 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "pretrained-roberta-large/representation-typed_punct_marker-5_concat",
+        "wandb_run_name" : "pretrained-roberta-large/typed_punct_marker-4_concat-prompt_CE",
         "wandb_project_name": "yewon_project",
         "wandb_entity_name": "be-our-friend"        
     },
@@ -10,7 +10,7 @@
     "arch": {
         "model_name": "meenham/tapt-roberta-large-bs256-ep100",
         "selected_model": "EntityMarkerModel",
-        "model_detail": "representation-typed_punct_marker-5_concat",
+        "model_detail": "typed_punct_marker-4_concat-prompt_CE",
         "representation_style": "typed_punct_marker",
         "loss_func": "CE"
     },
@@ -25,9 +25,9 @@
     },
 
     "path": {
-        "train_path": "./dataset/without_dup_train.csv",
-        "dev_path": "./dataset/without_dup_dev.csv",
-        "test_path": "./dataset/without_dup_dev.csv",
+        "train_path": "./dataset/total_train.csv",
+        "dev_path": "./dataset/merged_test_data.csv",
+        "test_path": "./dataset/merged_test_data.csv",
         "predict_path": "./dataset/test.csv"
     },
 
