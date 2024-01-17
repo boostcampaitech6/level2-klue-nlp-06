@@ -114,16 +114,10 @@ def main(config: Dict):
       model.load_state_dict(checkpoint)
       model.to(device)
 
-      ## load test datset
-      if config['endtoken'] == True:
-        dataloader = EntityEndtokenDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
+      dataloader = EntityEndtokenDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
                                 config['trainer']['batch_size'], config['trainer']['shuffle'], 
                                 config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
-        
-      else:
-        dataloader = EntityDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
-                                config['trainer']['batch_size'], config['trainer']['shuffle'], 
-                                config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+                                
 
       trainer = pl.Trainer(accelerator="gpu", devices=1,strategy="deepspeed_stage_2", precision=16)
       output_prob = torch.cat(trainer.predict(model=model, datamodule=dataloader))
@@ -169,7 +163,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'pretrained_roberta-large_endtoken_config.json'
+    selected_config = 'pretrained_roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
