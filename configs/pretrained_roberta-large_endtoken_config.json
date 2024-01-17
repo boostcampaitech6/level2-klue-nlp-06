@@ -11,7 +11,8 @@
         "model_name": "meenham/tapt-roberta-large-bs256-ep100",
         "selected_model": "EntityMarkerEndtokenModel",
         "model_detail": "representation-typed_punct_marker-endtoken",
-        "representation_style": "typed_punct_marker"
+        "representation_style": "typed_punct_marker",
+        "loss_func": "CE"
     },
 
     "trainer": {
@@ -32,6 +33,6 @@
 
     "deepspeed": true,
     "pooling" : false,
-    "endtoken" : true
+    "concat_num" : 5
 
 }
