@@ -1,0 +1,35 @@
+{
+    "seed": 42,
+
+    "wandb": {
+        "wandb_run_name" : "google/rembert_type_punct_prompt",
+        "wandb_project_name": "donghae_project",
+        "wandb_entity_name": "be-our-friend"        
+    },
+    
+    "arch": {
+        "model_name": "google/rembert",
+        "selected_model": "Model",
+        "model_detail": "type_punct_prompt",
+        "representation_style": "None",
+        "loss_func" : "focal"
+    },
+
+    "trainer": {
+        "batch_size": 16,
+        "infer_batch_size": 16,
+        "max_epoch": 30,
+        "shuffle": true,
+        "learning_rate": 1e-5,
+        "val_mode": false
+    },
+
+    "path": {
+        "train_path": "./dataset/total_train.csv",
+        "dev_path": "./dataset/merged_test_data.csv",
+        "test_path": "./dataset/merged_test_data.csv",
+        "predict_path": "./dataset/test.csv"},
+
+    "deepspeed" :true,
+    "pooling" : false
+}
