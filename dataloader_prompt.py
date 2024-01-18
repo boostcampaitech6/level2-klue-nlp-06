@@ -257,7 +257,6 @@ class PromptDataloader(pl.LightningDataModule):
             text = "".join(tmp)
             text = start_prompt + text + end_prompt
 
-            # print('## text : ', text)
 
             outputs = self.tokenizer(text, 
                                     return_tensors="pt", 

@@ -20,7 +20,7 @@ from utils.seed import set_seed
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
 from models.entity_marker_model import EntityMarkerModel
-from dataloader_prompt import *
+from dataloader_prompt2 import *
 
 def inference(model, tokenized_sent, device, batch_size=16):
   """
@@ -164,7 +164,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
 
-    selected_config = 'roberta-large_config.json'
+    selected_config = 'pretrained_roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

@@ -2,7 +2,7 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "klue/roberta-large/typed_punct_marker-4_concat-prompt_focal",
+        "wandb_run_name" : "klue/roberta-large/typed_punct_marker-4_concat-prompt2_focal",
         "wandb_project_name": "yewon_project",
         "wandb_entity_name": "be-our-friend"        
     },
@@ -10,7 +10,7 @@
     "arch": {
         "model_name": "klue/roberta-large",
         "selected_model": "EntityMarkerModel",
-        "model_detail": "typed_punct_marker-4_concat-prompt_focal",
+        "model_detail": "typed_punct_marker-4_concat-prompt2_focal",
         "representation_style": "typed_punct_marker",
         "loss_func": "focal"
     },

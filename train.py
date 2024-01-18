@@ -21,7 +21,8 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
-from dataloader_prompt import *
+# 프롬프트 변경  실험
+from dataloader_prompt2 import *
 from models import base_model, entity_marker_model
 from utils.seed import set_seed
 
