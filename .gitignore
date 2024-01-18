@@ -10,6 +10,12 @@ prediction/klue_*.csv
 lightning_logs/*
 pipeline.ipynb
 
+### auto versioning files ###
+auto_train.py
+auto_inference.py
+configs/auto_config.json
+
+
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks

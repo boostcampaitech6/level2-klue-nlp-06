@@ -5,9 +5,10 @@ import numpy as np
 import torch
 from tqdm.auto import tqdm
 import ast
+from pathlib import Path
 
 import transformers
-from transformers import AutoTokenizer, AutoConfig
+from transformers import AutoTokenizer, AutoConfig, BertTokenizerFast, BertConfig
 import pytorch_lightning as pl
 # from utils.replace_representation_tokens import replace_token
 
@@ -50,7 +51,6 @@ class Dataloader(pl.LightningDataModule):
         out_dataset = data.copy()
 
         # {'word': '비틀즈', 'start_idx': 24, 'end_idx': 26, 'type': 'ORG'} -> '비틀즈'
-        # 여기서 갑자기 keyerror?
         out_dataset['subject_entity'] = out_dataset['subject_entity'].apply(lambda x: ast.literal_eval(x)) # turn string formatted like dict into real dict
         out_dataset['object_entity'] = out_dataset['object_entity'].apply(lambda x: ast.literal_eval(x))
 
@@ -127,7 +127,8 @@ class Dataloader(pl.LightningDataModule):
 
     def predict_dataloader(self):
         return torch.utils.data.DataLoader(self.predict_dataset, batch_size=self.batch_size)
-
+      
+      
 
 
 #### 변경된 dataset & dataloader ###
@@ -417,3 +418,4 @@ class EntityDataloader(pl.LightningDataModule):
 
     def predict_dataloader(self):
         return torch.utils.data.DataLoader(self.predict_dataset, batch_size=self.batch_size)
+
