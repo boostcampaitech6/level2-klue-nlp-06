@@ -6,6 +6,7 @@ from torch import nn
 import pytorch_lightning as pl
 
 from metric import *
+from utils.loss import *
 import os
 CACHE_DIR = '/data/ephemeral/cache'
 

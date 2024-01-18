@@ -2,16 +2,17 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "klue/roberta-large/representation-klue",
+        "wandb_run_name" : "klue/roberta-large/typed_punct_marker-4_concat-prompt2_focal",
         "wandb_project_name": "yewon_project",
         "wandb_entity_name": "be-our-friend"        
     },
     
     "arch": {
         "model_name": "klue/roberta-large",
-        "selected_model": "Model",
-        "model_detail": "v1",
-        "representation_style": "baseline"
+        "selected_model": "EntityMarkerModel",
+        "model_detail": "typed_punct_marker-4_concat-prompt2_focal",
+        "representation_style": "typed_punct_marker",
+        "loss_func": "focal"
     },
 
     "trainer": {
@@ -24,14 +25,14 @@
     },
 
     "path": {
-        "train_path": "./dataset/train/train_split.csv",
-        "dev_path": "./dataset/dev_local/dev_split.csv",
-        "test_path": "./dataset/dev_local/dev_split.csv",
-        "predict_path": "./dataset/test/test.csv"
+        "train_path": "./dataset/total_train.csv",
+        "dev_path": "./dataset/merged_test_data.csv",
+        "test_path": "./dataset/merged_test_data.csv",
+        "predict_path": "./dataset/test.csv"
     },
 
     "deepspeed": true,
     "pooling" : false,
-    "endtoken" : false
+    "concat_num" : 4
 
 }
