@@ -340,10 +340,10 @@ class EntityDataloader(pl.LightningDataModule):
                     raise ValueError("subj-obj overlapped")
 
             # tokenized sentence, ss, os 반환하기
-            # subject 시작 위치 (토큰 단위 계산)
+            # subject, object 시작 위치 (토큰 단위 계산)
             ss = len(self.tokenizer(tmp[0], add_special_tokens=False)['input_ids']) + 1
             os = ss + len(self.tokenizer(tmp[1], add_special_tokens=False)['input_ids']) + len(self.tokenizer(tmp[2], add_special_tokens=False)['input_ids'])
-                
+
             if subj_s > obj_s:
                 ss, os = os, ss
                 

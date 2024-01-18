@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments
 from torch.utils.data import DataLoader
 from dataloader import *
+from dataloader_endtoken import *
 
 from typing import Dict
 import json
@@ -19,7 +20,6 @@ from utils.seed import set_seed
 # deepspeed 딕셔너리 형태로 적재되기 때문에 base model import 필요
 from models.base_model import Model
 from models.entity_marker_model import EntityMarkerModel
-from models.entity_marker_pooling_model import EntityMarkerPoolingModel
 
 def inference(model, tokenized_sent, device, batch_size=16):
   """
@@ -88,7 +88,6 @@ def main(config: Dict):
     # config 존재하는지 여부
     if config['arch']['representation_style'] != "None":
       checkpoint = torch.load(CHKPOINT_PATH)
-      
       tokenizer = AutoTokenizer.from_pretrained(config['arch']['model_name'], max_length=256)
 
       ### special tokens 추가 ###
@@ -110,19 +109,15 @@ def main(config: Dict):
 
       num_added_toks = tokenizer.add_special_tokens(special_tokens_dict)
 
-      # pooling 한 경우 변경
-      if config['pooling'] == True:
-        model = EntityMarkerPoolingModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
-      else:
-        model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer)
+      model = EntityMarkerModel(config['arch']['model_name'], config['trainer']['learning_rate'], tokenizer, config['arch']['loss_func'], config['pooling'], config['concat_num'])
 
       model.load_state_dict(checkpoint)
       model.to(device)
 
-      ## load test datset
-      dataloader = EntityDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
-                              config['trainer']['batch_size'], config['trainer']['shuffle'], 
-                              config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+      dataloader = EntityEndtokenDataloader(config['arch']['model_name'], config['arch']['representation_style'], 
+                                config['trainer']['batch_size'], config['trainer']['shuffle'], 
+                                config['path']['train_path'], config['path']['dev_path'], config['path']['test_path'],config['path']['predict_path'])
+                                
 
       trainer = pl.Trainer(accelerator="gpu", devices=1,strategy="deepspeed_stage_2", precision=16)
       output_prob = torch.cat(trainer.predict(model=model, datamodule=dataloader))
@@ -167,8 +162,8 @@ def main(config: Dict):
 
 
 if __name__ == '__main__':
-    selected_config = 'pretrained_roberta-large_pooling_config.json'
 
+    selected_config = 'pretrained_roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

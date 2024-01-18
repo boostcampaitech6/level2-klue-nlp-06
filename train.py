@@ -21,7 +21,8 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
-from models import base_model, entity_marker_model, entity_marker_pooling_model
+from dataloader_endtoken import *
+from models import base_model, entity_marker_model
 from utils.seed import set_seed
 
 # main에서 불러오는 걸로 수정
@@ -74,6 +75,7 @@ def main(config: Dict):
 
     parser.add_argument('--deepspeed', default=config['deepspeed'], type=bool)
     parser.add_argument('--pooling', default=config['pooling'], type=bool)
+    parser.add_argument('--concat_num', default=config['concat_num'], type=bool)
 
 
     args = parser.parse_args()
@@ -84,20 +86,20 @@ def main(config: Dict):
     print('model_detail : ', args.model_detail)
     print('loss_func : ', args.loss_func)
     print('pooling : ', args.pooling)
+    print('concat_num : ', args.concat_num)
 
     # dataloader와 model을 생성합니다.
-    dataloader = EntityDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
+    # end token 사용 -> 하나만 쓰자
+    dataloader = EntityEndtokenDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
 
     # representation style에 따라서 모델 다르게 불러옴
     if args.representation_style == "None":
         MODEL = base_model
     else:
-        if args.pooling == True:
-            MODEL = entity_marker_pooling_model
-        else:
-            MODEL = entity_marker_model
+        MODEL = entity_marker_model
+            
     # loss function 추가
-    model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func) # tokenizer에 따라서 resize 해줘야 하므로 인자에 추가
+    model = getattr(MODEL, config['arch']['selected_model'])(args.model_name, args.learning_rate, dataloader.tokenizer, args.loss_func, args.pooling, args.concat_num)
 
 
     early_stop_custom_callback = EarlyStopping(
@@ -142,9 +144,10 @@ def main(config: Dict):
         torch.save(model, './best_model/'+'_'.join(args.model_name.split('/') + args.model_detail.split()) + '.pt')
 
 
+
 if __name__ == '__main__':
     ### config change part ###
-    selected_config = 'pretrained_roberta-large_pooling_config.json'
+    selected_config = 'pretrained_roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)
