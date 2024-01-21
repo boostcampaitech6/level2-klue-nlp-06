@@ -21,7 +21,8 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 
 from dataloader import *
-from dataloader_endtoken import *
+# 프롬프트 변경  실험
+from dataloader_prompt2 import *
 from models import base_model, entity_marker_model
 from utils.seed import set_seed
 
@@ -90,7 +91,7 @@ def main(config: Dict):
 
     # dataloader와 model을 생성합니다.
     # end token 사용 -> 하나만 쓰자
-    dataloader = EntityEndtokenDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
+    dataloader = PromptDataloader(args.model_name, args.representation_style, args.batch_size, args.shuffle, args.train_path, args.dev_path, args.test_path, args.predict_path)
 
     # representation style에 따라서 모델 다르게 불러옴
     if args.representation_style == "None":
@@ -147,7 +148,7 @@ def main(config: Dict):
 
 if __name__ == '__main__':
     ### config change part ###
-    selected_config = 'pretrained_roberta-large_config.json'
+    selected_config = 'roberta-large_config.json'
 
     with open(f'./configs/{selected_config}', 'r') as f:
         config = json.load(f)

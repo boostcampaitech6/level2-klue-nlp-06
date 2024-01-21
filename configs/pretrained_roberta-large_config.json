@@ -2,7 +2,7 @@
     "seed": 42,
 
     "wandb": {
-        "wandb_run_name" : "pretrained-roberta-large/representation-typed_punct_marker-5_concat",
+        "wandb_run_name" : "pretrained-roberta-large/typed_punct_marker-3_concat-prompt_focal",
         "wandb_project_name": "yewon_project",
         "wandb_entity_name": "be-our-friend"        
     },
@@ -10,9 +10,9 @@
     "arch": {
         "model_name": "meenham/tapt-roberta-large-bs256-ep100",
         "selected_model": "EntityMarkerModel",
-        "model_detail": "representation-typed_punct_marker-5_concat",
+        "model_detail": "typed_punct_marker-3_concat-prompt_focal",
         "representation_style": "typed_punct_marker",
-        "loss_func": "CE"
+        "loss_func": "focal"
     },
 
     "trainer": {
@@ -25,13 +25,13 @@
     },
 
     "path": {
-        "train_path": "./dataset/without_dup_train.csv",
-        "dev_path": "./dataset/without_dup_dev.csv",
-        "test_path": "./dataset/without_dup_dev.csv",
+        "train_path": "./dataset/total_train.csv",
+        "dev_path": "./dataset/merged_test_data.csv",
+        "test_path": "./dataset/merged_test_data.csv",
         "predict_path": "./dataset/test.csv"
     },
 
     "deepspeed": true,
     "pooling" : false,
-    "concat_num" : 4
+    "concat_num" : 3
 }
