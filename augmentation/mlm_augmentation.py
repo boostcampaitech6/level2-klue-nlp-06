@@ -9,6 +9,16 @@ import random
 from tqdm import tqdm
 import torch.cuda
 import ast
+def find_word_indices(sentence, word):
+    indices = []
+    start_index = 0
+    while True:
+        index = sentence.find(word, start_index)
+        if index == -1:
+            break
+        indices.append((index, index + len(word) - 1))
+        start_index = index + len(word) - 1
+    return indices
 
 def find_indices_with_term(word_list, term):
     indices = [index for index, word in enumerate(word_list) if term in word]
@@ -99,6 +109,7 @@ def main(config):
                 model.eval()
                 
                 for _ in range(2):
+                
                     sentence_split = sentence.split()
                     indices_subject_word_one = find_indices_with_term(sentence_split, modified_subject_word_one)
                     indices_object_word_one = find_indices_with_term(sentence_split, modified_object_word_one)
@@ -157,9 +168,22 @@ def main(config):
                 
                 sentence = sentence.replace(modified_subject_word_one, subject_word)
                 sentence = sentence.replace(modified_object_word_one, object_word)
+                
+                if subject_start_idx < object_start_idx:
+                    subject_start_idx = subject_start_idx
+                    subject_end_idx = subject_start_idx + len(subject_word) - 1
+                    object_start_idx = object_start_idx - ( len(modified_subject_word_one) - len(subject_word) )
+                    object_end_idx = object_start_idx + len(object_word) -1
+                
+                elif subject_start_idx > object_start_idx:
+                    object_start_idx = object_start_idx
+                    object_end_idx = object_start_idx + len(object_word) - 1
+                    subject_start_idx = subject_start_idx - ( len(modified_object_word_one) - len(object_word) )
+                    subject_end_idx = subject_start_idx + len(subject_word) -1
+                    
+                else:
+                    raise ValueError(f"{subject_start_idx}={object_start_idx} ValueError입니다.")
 
-                subject_end_idx = subject_start_idx + len(subject_word) -1
-                object_end_idx = object_start_idx + len(object_word) -1
                 
                 new_sentence = sentence 
                 subj = eval(subject_entity)["word"]
