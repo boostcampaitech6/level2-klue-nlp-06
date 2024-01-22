@@ -63,6 +63,7 @@
 |**Experiment Model**|`klue/roberta-large`, `wooy0ng/korquad1-klue-roberta-large`, `studio-ousia/mluke-large-lite`, `hfl/cino-large-v2`, `google/rembert`, `FacebookAI/xlm-roberta-large`|
 |**Mornitoring**| `Wandb`|
 |**Ensemble**|`weight voting`, `soft voting`, `hard voting`|
+|**Loss Function**|`Cross Entropy Loss`, `Focal Loss`|
 
 <br>
 
