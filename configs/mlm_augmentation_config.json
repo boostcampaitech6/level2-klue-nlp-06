@@ -1,0 +1,24 @@
+{
+    "seed" : 42,
+    
+    "augment_target" : 1000,
+    
+    "masking_num" : 8,
+
+    "model_name" : "./augmentation/roberta_large_3epoch",
+    
+    "data_path" : { 
+        "train_path" : "./dataset/total_train.csv",
+        "val_path" : "./dataset/without_dup_dev.csv"
+    },
+
+    "train_aug" : true,
+
+    "threshold" : {
+        "train" : 1000,
+        "val" : 100
+    },
+
+    "remove" : "['#','-','*']"
+
+}

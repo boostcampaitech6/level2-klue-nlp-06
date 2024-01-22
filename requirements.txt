@@ -1,0 +1,12 @@
+###### Requirements without Version Specifiers ######
+argparse
+deepspeed
+
+
+###### Requirements with Version Specifiers ######
+pandas
+scikit-learn
+transformers
+torch==1.13.1
+wandb==0.16.1
+pytorch-lightning==2.1.3

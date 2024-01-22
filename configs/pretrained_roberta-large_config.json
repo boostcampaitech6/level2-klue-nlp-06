@@ -1,0 +1,37 @@
+{
+    "seed": 42,
+
+    "wandb": {
+        "wandb_run_name" : "pretrained-roberta-large/typed_punct_marker-3_concat-prompt_focal",
+        "wandb_project_name": "yewon_project",
+        "wandb_entity_name": "be-our-friend"        
+    },
+    
+    "arch": {
+        "model_name": "meenham/tapt-roberta-large-bs256-ep100",
+        "selected_model": "EntityMarkerModel",
+        "model_detail": "typed_punct_marker-3_concat-prompt_focal",
+        "representation_style": "typed_punct_marker",
+        "loss_func": "focal"
+    },
+
+    "trainer": {
+        "batch_size": 16,
+        "infer_batch_size": 16,
+        "max_epoch": 30,
+        "shuffle": true,
+        "learning_rate": 1e-5,
+        "val_mode": false
+    },
+
+    "path": {
+        "train_path": "./dataset/total_train.csv",
+        "dev_path": "./dataset/merged_test_data.csv",
+        "test_path": "./dataset/merged_test_data.csv",
+        "predict_path": "./dataset/test.csv"
+    },
+
+    "deepspeed": true,
+    "pooling" : false,
+    "concat_num" : 3
+}

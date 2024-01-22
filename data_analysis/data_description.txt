@@ -1,0 +1,30 @@
+no_relation	No relation in between (esubj, eobj)
+org:dissolved 	The date when the specified organization was dissolved 
+org:founded 	The date when the specified organization was founded 
+org:place_of_headquarters	The place which the headquarters of the specified organization are located in 
+org:alternate_names 	Alternative names called instead of the official name to refer to the specified organization
+org:member_of 	Organizations to which the specified organization belongs 
+org:members 	Organizations which belong to the specified organization 
+org:political/religious_affiliation 	Political/religious groups which the specified organization is affiliated in 
+org:product 	Products or merchandise produced by the specified organization 
+org:founded_by 	The person or organization that founded the specified organization 
+org:top_members/employees 	The representative(s) or members of the specified organization 
+org:number_of_employees/members 	The total number of members that are affiliated in the specified organization 
+per:date_of_birth 	The date when the specified person was born
+per:date_of_death 	The date when the specified person died 
+per:place_of_birth 	The place where the specified person was born 
+per:place_of_death 	the place where the specified person died 
+per:place_of_residence 	The place where the specified person lives 
+per:origin 	The origins or the nationality of the specified person 
+per:employee_of	The organization where the specified person works 
+per:schools_attended 	A school where the specified person attended 
+per:alternate_names 	Alternative names called instead of the official name to refer to the specified person
+per:parents 	The parents of the specified person 
+per:children 	The children of the specified person 
+per:siblings 	The brothers and sisters of the specified person 
+per:spouse	The spouse(s) of the specified person 
+per:other_family 	Family members of the specified person other than parents, children, siblings, and spouse(s) 
+per:colleagues 	People who work together with the specified person
+per:product	Products or artworks produced by the specified person 
+per:religion 	The religion in which the specified person believes 
+per:title 	Official or unofficial names that represent the occupational position of the specified person
